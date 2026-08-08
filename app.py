@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, desc
-
+from fastapi.security import OAuth2PasswordRequestForm
 from database import engine, SessionLocal
 from models import Base, User, Job, Application, SavedJob
 from schemas import (
@@ -90,43 +90,60 @@ def register(
     }
 
 
-
 @app.post("/login")
 def login(
-    user: LoginUser,
+    form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
 
+    
+    email = form_data.username
+    password = form_data.password
+
+    
     db_user = db.query(User).filter(
-        User.email == user.email
+        User.email == email
     ).first()
 
+    
     if not db_user:
 
         raise HTTPException(
             status_code=401,
-            detail="Invalid Email or Password"
+            detail="Invalid Email or Password",
+            headers={
+                "WWW-Authenticate": "Bearer"
+            }
         )
 
+    
     if not verify_password(
-        user.password,
+        password,
         db_user.password
     ):
 
         raise HTTPException(
             status_code=401,
-            detail="Invalid Email or Password"
+            detail="Invalid Email or Password",
+            headers={
+                "WWW-Authenticate": "Bearer"
+            }
         )
 
+    
     token = create_access_token({
         "sub": db_user.email,
         "role": db_user.role
     })
 
+    
     return {
         "access_token": token,
         "token_type": "bearer"
     }
+
+
+
 
 @app.get("/me")
 def my_profile(
