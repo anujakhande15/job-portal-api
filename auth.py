@@ -10,7 +10,8 @@ from sqlalchemy.orm import Session
 from database import SessionLocal
 from models import User
 
-SECRET_KEY = "your-secret-key-change-this"
+
+SECRET_KEY = "change-this-secret-key-before-deployment"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
@@ -19,15 +20,23 @@ pwd_context = CryptContext(
     deprecated="auto"
 )
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl="login"
+)
 
 
 def hash_password(password: str):
     return pwd_context.hash(password)
 
 
-def verify_password(plain_password: str, hashed_password: str):
-    return pwd_context.verify(plain_password, hashed_password)
+def verify_password(
+    plain_password: str,
+    hashed_password: str
+):
+    return pwd_context.verify(
+        plain_password,
+        hashed_password
+    )
 
 
 def create_access_token(data: dict):
@@ -48,6 +57,7 @@ def create_access_token(data: dict):
 
 def get_db():
     db = SessionLocal()
+
     try:
         yield db
     finally:
@@ -58,9 +68,7 @@ def get_current_user(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db)
 ):
-
     try:
-
         payload = jwt.decode(
             token,
             SECRET_KEY,
